@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Terminalize Userscript — Demo</title>
+    <style>
+      :root {
+        --bg: #0b0d10;
+        --panel: #11151a;
+        --muted: #8aa2b2;
+        --text: #d7e3ec;
+        --accent: #00ff88;
+        --link: #6bc1ff;
+      }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, var(--bg), #0e1116 70%);
+        color: var(--text);
+        font: 16px/1.6 Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+      h1 { font-size: 28px; margin: 0; letter-spacing: 0.2px; }
+      .muted { color: var(--muted); }
+      .panel {
+        background: var(--panel);
+        border: 1px solid #1a2129;
+        border-radius: 10px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px rgba(0,0,0,0.35);
+      }
+      #demo-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px; }
+      .btn {
+        appearance: none; border: 1px solid #28313a; background: #0f141a; color: var(--text);
+        padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 600;
+      }
+      .btn.primary { border-color: #126b4a; background: linear-gradient(180deg, #0f2b22, #0d251d); color: #bdfbe1; }
+      .btn:hover { filter: brightness(1.06); }
+      a { color: var(--link); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      #demo-content { margin-top: 18px; padding: 22px; }
+      /* Demo content layout */
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+      .card { background: #0f141a; border: 1px solid #1a2129; border-radius: 10px; padding: 16px; }
+      .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #0f2b22; color: #9df6d7; border: 1px solid #126b4a; }
+      input, textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid #28313a; background: #0d1217; color: var(--text); }
+      code, pre { background: #0a0d11; border: 1px solid #1a2129; padding: 2px 6px; border-radius: 6px; }
+      footer { margin-top: 28px; color: var(--muted); font-size: 14px; }
+      /* Matrix rain letters */
+      .matrix-letter { position: fixed; color: #00ff00; font-size: 2em; font-family: monospace; z-index: 9999; pointer-events: none; opacity: 0.8; text-shadow: 0 0 8px #0f0, 0 0 16px #0f0; }
+      .note { font-size: 14px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Terminalize Userscript — Live Demo</h1>
+          <div class="muted">Preview how pages look once the userscript is installed.</div>
+        </div>
+        <div>
+          <a class="btn" href="https://greasyfork.org/en/scripts/540217-terminalize" target="_blank" rel="noopener">Install on GreasyFork →</a>
+        </div>
+      </header>
+
+      <div id="demo-controls" class="panel" aria-label="Demo controls">
+        <button id="run-demo" class="btn primary">Run Simulation</button>
+        <button id="reset-demo" class="btn">Reset</button>
+        <span class="muted">This demo applies the effect to the content box below.</span>
+      </div>
+
+      <section id="demo-content" class="panel" aria-label="Demo content">
+        <div class="grid">
+          <div class="card">
+            <span class="tag">Heading + paragraph</span>
+            <h2>Welcome to the Demo</h2>
+            <p>
+              This block shows how the userscript converts text to a retro terminal look and animates it with a typewriter effect.
+              Links like <a href="#">this one</a> remain clickable.
+            </p>
+          </div>
+
+          <div class="card">
+            <span class="tag">List + spans</span>
+            <ul>
+              <li><span>Fast typewriter effect with slight randomness.</span></li>
+              <li><span>Monospace font across most text nodes.</span></li>
+              <li><span>Watches for new content via mutation observer.</span></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <span class="tag">Input trigger</span>
+            <label for="trigger">Type “hacking” to spawn matrix rain:</label>
+            <input id="trigger" placeholder="try typing hacking" />
+            <p class="note">The real script spawns a green matrix-style rain when inputs contain that word.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Install the real userscript from GreasyFork: <a href="https://greasyfork.org/en/scripts/540217-terminalize" target="_blank" rel="noopener">Terminalize</a>.
+      </footer>
+    </div>
+
+    <script>
+      // This is a faithful, dependency-free simulation of terminalize.user.js
+      // scoped to the #demo-content container so controls remain readable.
+      (function () {
+        const content = document.getElementById('demo-content');
+        if (!content) return;
+
+        function setMonospace(node) {
+          const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT);
+          let current = node;
+          do {
+            if (current instanceof HTMLElement) {
+              if (current.dataset.terminalfonted) { current = walker.nextNode(); continue; }
+              current.dataset.terminalfonted = 'true';
+              current.style.fontFamily = 'Courier New, Courier, monospace';
+            }
+          } while ((current = walker.nextNode()));
+        }
+
+        function hasDescendantMatching(el, selector) {
+          return !!el.querySelector(selector);
+        }
+
+        function typewriter(el) {
+          if (el.dataset.terminalized) return;
+          el.dataset.terminalized = 'true';
+          const full = el.textContent;
+          el.textContent = '';
+          let i = 0;
+          (function tick() {
+            if (i < full.length) {
+              el.textContent += full.charAt(i++);
+              setTimeout(tick, 60 + Math.random() * 100);
+            }
+          })();
+        }
+
+        function terminalizeScope(scope) {
+          setMonospace(scope);
+          const candidates = scope.querySelectorAll('p, h1, h2, h3, span, li, a');
+          candidates.forEach(el => {
+            // Skip if element contains interactive or nested rich content like the script does via :has()
+            if (el.tagName.toLowerCase() === 'span' && el.children.length > 0) return;
+            if (el.tagName.toLowerCase() === 'li' && hasDescendantMatching(el, 'a, form')) return;
+            if (el.tagName.toLowerCase() === 'a' && hasDescendantMatching(el, 'img')) return;
+            if (hasDescendantMatching(el, 'a, img, video, audio, canvas, code, pre')) return;
+            typewriter(el);
+          });
+        }
+
+        function spawnMatrixRain() {
+          for (let i = 0; i < 60; i++) {
+            setTimeout(createMatrixLetter, i * 100);
+          }
+        }
+
+        function createMatrixLetter() {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          const letter = chars.charAt(Math.floor(Math.random() * chars.length));
+          const span = document.createElement('span');
+          span.className = 'matrix-letter';
+          span.textContent = letter;
+          span.style.left = Math.random() * window.innerWidth + 'px';
+          span.style.top = '-40px';
+          document.body.appendChild(span);
+          const duration = 1200 + Math.random() * 1200;
+          const start = performance.now();
+          function step(now) {
+            const t = Math.min(1, (now - start) / duration);
+            span.style.top = (-40 + t * (window.innerHeight + 40)) + 'px';
+            span.style.opacity = String(0.8 - t * 0.7);
+            if (t < 1) requestAnimationFrame(step); else span.remove();
+          }
+          requestAnimationFrame(step);
+        }
+
+        // Matrix rain trigger: listen globally so it works even before running the simulation
+        function inputListener(e) {
+          const t = e.target;
+          if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+            const v = (t.value || '').toString().toLowerCase();
+            if (v.includes('hacking')) spawnMatrixRain();
+          }
+        }
+        document.addEventListener('input', inputListener, { passive: true });
+        document.addEventListener('keyup', inputListener, { passive: true });
+
+        // Controls
+        const runBtn = document.getElementById('run-demo');
+        const resetBtn = document.getElementById('reset-demo');
+        runBtn?.addEventListener('click', () => {
+          terminalizeScope(content);
+
+          // Observe mutations like the userscript does
+          const obs = new MutationObserver(() => terminalizeScope(content));
+          obs.observe(content, { childList: true, subtree: true });
+
+          runBtn.disabled = true;
+          runBtn.textContent = 'Simulation Running';
+        });
+        resetBtn?.addEventListener('click', () => window.location.reload());
+      })();
+    </script>
+  </body>
+  </html>
