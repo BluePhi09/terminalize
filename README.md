@@ -47,7 +47,7 @@ If a site doesn't play nicely, you can:
 
 - Temporarily toggle it off: Click your userscript manager's icon and disable Terminalize on that tab/site.
 - Exclude a domain permanently:
-  - Tampermonkey: Dashboard → Terminalize → Settings → "Excluded pages" → add the domain (e.g., `https://mail.example.com/*`).
+  - Tampermonkey: Dashboard -> Terminalize -> Settings -> "Excluded pages" -> add the domain (e.g., `https://mail.example.com/*`).
   - Violentmonkey/Greasemonkey: Similar per-script exclude controls are available in the script settings.
 
 ## Editing and Development
